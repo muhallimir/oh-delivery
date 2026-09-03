@@ -1,11 +1,13 @@
 {
   "expo": {
-    "name": "oh-delivery",
+    "name": "Oh Delivery",
     "slug": "oh-delivery",
     "version": "1.0.0",
+    "owner": "amirsali",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -16,16 +18,19 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.amirsali.ohdelivery"
     },
     "android": {
+      "package": "com.amirsali.ohdelivery",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     }
   }
 }

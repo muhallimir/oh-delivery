@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import logo from "../assets/images/logo.png";
-import { Text, View, Image, TextInput, ScrollView } from "react-native";
+import { Text, View, Image, TextInput, ScrollView, StyleSheet } from "react-native";
 import {
   UserIcon,
   ChevronDownIcon,
@@ -40,21 +40,21 @@ const HomeScreen = () => {
   }, []);
 
   return (
-    <SafeAreaView className="bg-white pt-5">
-      <View className="flex-row pb-3 items-center mx-4 space-x-2">
-        <Image source={logo} className="h-7 w-7 bg-gray-300 p-5 rounded-full" />
-        <View className="flex-1">
-          <Text className="font-bold text-gray-400 text-xs">Deliver Now!</Text>
-          <Text className="font-bold text-xl">
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.headerRow}>
+        <Image source={logo} style={styles.logo} />
+        <View style={styles.headerText}>
+          <Text style={styles.deliverLabel}>Deliver Now!</Text>
+          <Text style={styles.locationLabel}>
             Current Location
             <ChevronDownIcon size={20} color="#F86874" />
           </Text>
         </View>
         <UserIcon size={35} color="#F86874" />
       </View>
-      {/* Search */}
-      <View className="flex-row items-center space-x-2 pb-2 mx-4">
-        <View className="flex-row space-x-2 flex-1 bg-gray-200 p-3 br">
+
+      <View style={styles.searchRow}>
+        <View style={styles.searchBox}>
           <SearchIcon size={25} color="gray" />
           <TextInput
             placeholder="Restaurants and Cuisines.."
@@ -63,15 +63,12 @@ const HomeScreen = () => {
         </View>
         <AdjustmentsIcon size={20} color="#F86874" />
       </View>
-      {/* Body */}
 
       <ScrollView
-        className="bg-gray-100"
+        style={styles.body}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {/* Categories */}
         <Categories />
-        {/* Featured rows */}
         {featuredCategories?.map((category, index) => (
           <FeaturedRow
             key={index}
@@ -84,5 +81,55 @@ const HomeScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: "#ffffff",
+    paddingTop: 20,
+  },
+  headerRow: {
+    flexDirection: "row",
+    paddingBottom: 12,
+    alignItems: "center",
+    marginHorizontal: 16,
+    gap: 8,
+  },
+  logo: {
+    height: 28,
+    width: 28,
+    backgroundColor: "#d1d5db",
+    padding: 20,
+    borderRadius: 9999,
+  },
+  headerText: {
+    flex: 1,
+  },
+  deliverLabel: {
+    fontWeight: "700",
+    color: "#9ca3af",
+    fontSize: 12,
+  },
+  locationLabel: {
+    fontWeight: "700",
+    fontSize: 20,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 8,
+    marginHorizontal: 16,
+    gap: 8,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#e5e7eb",
+    padding: 12,
+  },
+  body: {
+    backgroundColor: "#f3f4f6",
+  },
+});
 
 export default HomeScreen;

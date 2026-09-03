@@ -4,6 +4,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  StyleSheet,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,7 +19,7 @@ import { XCircleIcon } from "react-native-heroicons/solid";
 import logo from "../assets/images/logo.png";
 import { ScrollView } from "react-native-gesture-handler";
 import { urlFor } from "../sanity";
-import Currency from "react-currency-formatter";
+import Currency from "../components/Currency";
 
 const CartScreen = () => {
   const navigation = useNavigation();
@@ -28,7 +29,6 @@ const CartScreen = () => {
   const dispatch = useDispatch();
   const [groupedItemsInCart, setGroupedItemsInCart] = useState([]);
 
-  //   grouping items in cart
   useEffect(() => {
     const groupedItems = items.reduce((results, item) => {
       (results[item.id] = results[item.id] || []).push(item);
@@ -38,58 +38,49 @@ const CartScreen = () => {
   }, [items]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1">
-        <View className="p-5 border-b border-[#F86874] bg-white shadow-xs">
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
           <View>
-            <Text className="text-lg font-bold text-center mt-3">
-              Current items
-            </Text>
-            <Text className="text-center text-gray-400">
-              {restaurant.title}
-            </Text>
+            <Text style={styles.headerTitle}>Current items</Text>
+            <Text style={styles.headerSubtitle}>{restaurant.title}</Text>
           </View>
 
           <TouchableOpacity
             onPress={navigation.goBack}
-            className="absolute top-5 right-3 bg-gray-100 rounded-full"
+            style={styles.closeButton}
           >
             <XCircleIcon height={50} width={50} color="#F86874" />
           </TouchableOpacity>
         </View>
-        <View className="flex-row items-center space-x-4 px-4 py-3 bg-white my-5">
-          <Image
-            source={logo}
-            className="h-7 w-7 bg-gray-300 p-5 rounded-full"
-          />
-          <Text className="flex-1">Deliver in 30 - 40 min</Text>
+
+        <View style={styles.deliveryRow}>
+          <Image source={logo} style={styles.logo} />
+          <Text style={styles.deliveryText}>Deliver in 30 - 40 min</Text>
           <TouchableOpacity>
-            <Text className="text-[#F86874]">Change</Text>
+            <Text style={styles.changeText}>Change</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView className="divide-y divide-gray-200">
+        <ScrollView>
           {Object.entries(groupedItemsInCart).map(([key, items]) => (
-            <View
-              key={key}
-              className="flex-row items-center space-x-3 bg-white py-2 px-5"
-            >
-              <Text className="text-[#F86874]">{items.length} x</Text>
+            <View key={key} style={styles.itemRow}>
+              <Text style={styles.itemQty}>{items.length} x</Text>
 
               <Image
                 source={{
                   uri: urlFor(items[0]?.image).url(),
                 }}
-                className="h-12 w-12 bg-gray-300  rounded-full"
+                style={styles.itemImage}
               />
 
-              <Text className="flex-1">{items[0]?.name}</Text>
-              <Text className="text-gray-600">
-                <Currency quantity={items[0]?.price} currency="PHP"></Currency>
+              <Text style={styles.itemName}>{items[0]?.name}</Text>
+              <Text style={styles.itemPrice}>
+                <Currency quantity={items[0]?.price} currency="PHP" />
               </Text>
               <TouchableOpacity>
                 <Text
-                  className="text-[#F86874] text-xs"
+                  style={styles.removeText}
                   onPress={() => dispatch(decreaseItemCount({ id: key }))}
                 >
                   Remove
@@ -99,40 +90,154 @@ const CartScreen = () => {
           ))}
         </ScrollView>
 
-        <View className="p-5 bg-white mt-5 space-y-4">
-          <View className="flex-row justify-between">
-            <Text className="text-gray-400">Subtotal</Text>
-            <Text className="text-gray-400">
-              <Currency quantity={cartTotal} currency="PHP"></Currency>
+        <View style={styles.totalsBox}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Subtotal</Text>
+            <Text style={styles.totalLabel}>
+              <Currency quantity={cartTotal} currency="PHP" />
             </Text>
           </View>
 
-          <View className="flex-row justify-between">
-            <Text className="text-gray-400">Deliver</Text>
-            <Text className="text-gray-400">
-              <Currency quantity={74} currency="PHP"></Currency>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Deliver</Text>
+            <Text style={styles.totalLabel}>
+              <Currency quantity={74} currency="PHP" />
             </Text>
           </View>
 
-          <View className="flex-row justify-between">
+          <View style={styles.totalRow}>
             <Text>Order Total</Text>
-            <Text className="font-extrabold">
-              <Currency quantity={cartTotal + 74} currency="PHP"></Currency>
+            <Text style={styles.totalGrand}>
+              <Currency quantity={cartTotal + 74} currency="PHP" />
             </Text>
           </View>
 
           <TouchableOpacity
             onPress={() => navigation.navigate("PrepareOrder")}
-            className="bg-[#F86874] p-4 rounded-lg"
+            style={styles.placeOrder}
           >
-            <Text className="text-center text-white text-lg font-bold">
-              Place Order
-            </Text>
+            <Text style={styles.placeOrderText}>Place Order</Text>
           </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderColor: "#F86874",
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: 12,
+  },
+  headerSubtitle: {
+    textAlign: "center",
+    color: "#9ca3af",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 20,
+    right: 12,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 9999,
+  },
+  deliveryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#ffffff",
+    marginVertical: 20,
+    gap: 16,
+  },
+  logo: {
+    height: 28,
+    width: 28,
+    backgroundColor: "#d1d5db",
+    padding: 20,
+    borderRadius: 9999,
+  },
+  deliveryText: {
+    flex: 1,
+  },
+  changeText: {
+    color: "#F86874",
+  },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  itemQty: {
+    color: "#F86874",
+  },
+  itemImage: {
+    height: 48,
+    width: 48,
+    backgroundColor: "#d1d5db",
+    borderRadius: 9999,
+  },
+  itemName: {
+    flex: 1,
+  },
+  itemPrice: {
+    color: "#4b5563",
+  },
+  removeText: {
+    color: "#F86874",
+    fontSize: 12,
+  },
+  totalsBox: {
+    padding: 20,
+    backgroundColor: "#ffffff",
+    marginTop: 20,
+    gap: 16,
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  totalLabel: {
+    color: "#9ca3af",
+  },
+  totalGrand: {
+    fontWeight: "800",
+  },
+  placeOrder: {
+    backgroundColor: "#F86874",
+    padding: 16,
+    borderRadius: 8,
+  },
+  placeOrderText: {
+    textAlign: "center",
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+});
 
 export default CartScreen;

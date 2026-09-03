@@ -1,4 +1,11 @@
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import React, { useLayoutEffect } from "react";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { urlFor } from "../sanity";
@@ -60,53 +67,48 @@ const RestaurantScreen = () => {
     <>
       <CartIcon />
       <ScrollView>
-        <View className="relative">
+        <View style={styles.heroWrap}>
           <Image
             source={{ uri: urlFor(imgUrl).url() }}
-            className="w-full h-60 bg-gray-300 p-4"
+            style={styles.heroImage}
           />
           <TouchableOpacity
-            className="absolute top-14 left-5 p-2 bg-gray-100 rounded-full"
-            // navigate back
+            style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <ArrowLeftIcon size={20} color="#F86874" />
           </TouchableOpacity>
         </View>
-        <View className="bg-white">
-          <View className="px-4 pt-4">
-            <Text className="text-3xl font-bold">{title}</Text>
-            <View className="flex-row space-x-2 my-1">
-              <View className="flex-row items-center space-x-1">
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoInner}>
+            <Text style={styles.title}>{title}</Text>
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
                 <StarIcon color="#FCBF67" size={22} />
-                <Text className="text-xs text-gray-500">
-                  <Text className="text-500">{rating}</Text> . {genre}
+                <Text style={styles.metaText}>
+                  <Text style={styles.metaAccent}>{rating}</Text> . {genre}
                 </Text>
               </View>
 
-              <View className="flex-row items-center space-x-1">
+              <View style={styles.metaItem}>
                 <LocationMarkerIcon color="gray" size={22} />
-                <Text className="text-xs text-gray-500">
-                  Nearby . {address}
-                </Text>
+                <Text style={styles.metaText}>Nearby . {address}</Text>
               </View>
             </View>
 
-            <Text className="text-gray-500 mt-2 pb-4">{short_description}</Text>
+            <Text style={styles.shortDescription}>{short_description}</Text>
           </View>
 
-          <TouchableOpacity className="flex-row items-center space-x-2 p-4 border-y border-gray-300">
+          <TouchableOpacity style={styles.allergyRow}>
             <QuestionMarkCircleIcon color="gray" opacity={0.6} size={20} />
-            <Text className="pl-2 flex-1 text-md font-bold">
-              Have a food allergy?
-            </Text>
+            <Text style={styles.allergyText}>Have a food allergy?</Text>
             <ChevronRightIcon color="#F86874" />
           </TouchableOpacity>
         </View>
 
         <View>
-          <Text className="px-4 pt-6 mb-3 font-bold text-xl">Menu</Text>
-          {/* Dish rows */}
+          <Text style={styles.menuHeading}>Menu</Text>
           {dishes.map((dish, index) => (
             <DishRow
               key={index}
@@ -122,5 +124,80 @@ const RestaurantScreen = () => {
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  heroWrap: {
+    position: "relative",
+  },
+  heroImage: {
+    width: "100%",
+    height: 240,
+    backgroundColor: "#d1d5db",
+    padding: 16,
+  },
+  backButton: {
+    position: "absolute",
+    top: 56,
+    left: 20,
+    padding: 8,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 9999,
+  },
+  infoCard: {
+    backgroundColor: "#ffffff",
+  },
+  infoInner: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  metaRow: {
+    flexDirection: "row",
+    marginVertical: 4,
+    gap: 8,
+  },
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  metaAccent: {
+    color: "#6b7280",
+  },
+  shortDescription: {
+    color: "#6b7280",
+    marginTop: 8,
+    paddingBottom: 16,
+  },
+  allergyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#d1d5db",
+    gap: 8,
+  },
+  allergyText: {
+    paddingLeft: 8,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  menuHeading: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    marginBottom: 12,
+    fontWeight: "700",
+    fontSize: 20,
+  },
+});
 
 export default RestaurantScreen;
