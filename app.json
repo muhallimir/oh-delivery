@@ -2,11 +2,12 @@
   "expo": {
     "name": "Oh Delivery",
     "slug": "oh-delivery",
+    "scheme": "ohdelivery",
     "version": "1.0.0",
     "owner": "amirsali",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
@@ -31,6 +32,15 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
+    },
+    "extra": {
+      "author": {
+        "name": "Amirsali",
+        "email": "mir23wpurposes@gmail.com",
+        "github": "https://github.com/amirsali"
+      },
+      "description": "Food delivery app built with Expo and React Native",
+      "license": "MIT"
     }
   }
 }
