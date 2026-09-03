@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 import React, { useEffect, useState } from "react";
 import { ArrowRightIcon } from "react-native-heroicons/outline";
 import RestaurantCard from "./RestaurantCard";
@@ -16,8 +16,8 @@ const FeaturedRow = ({ id, title, description, address }) => {
       dishes[]->,
       type->{
         name
-    }
-  },
+      }
+    },
 }[0]
 `,
         { id }
@@ -27,36 +27,31 @@ const FeaturedRow = ({ id, title, description, address }) => {
       });
   }, []);
 
-  // console.log(restaurants);
-
   return (
     <View>
-      <View className="mt-4 flex-row items-center justify-between px-4">
-        <Text className="font-bold text-lg">{title}</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{title}</Text>
         <ArrowRightIcon color="#F86874" />
       </View>
       <View>
-        <Text className="text-xs text-gray-500 ml-3.5">{description}</Text>
+        <Text style={styles.description}>{description}</Text>
       </View>
       <ScrollView
         horizontal
         contentContainerStyle={{ paddingHorizontal: 15 }}
         showsHorizontalScrollIndicator={false}
-        className="pt-4"
+        style={styles.cards}
       >
-        {/* Restaurant Cards from backend */}
         {restaurants?.map((restaurant, index) => (
           <RestaurantCard
             key={index}
             id={restaurant._id}
-            // if address is too long show short text with ...
             address={
               restaurant.address.length > 20
                 ? `${restaurant.address.slice(0, 20)}...`
                 : restaurant.address
             }
             imgUrl={restaurant.image}
-            // address={restaurant.address}
             title={restaurant.name}
             dishes={restaurant.dishes}
             rating={restaurant.rating}
@@ -70,5 +65,27 @@ const FeaturedRow = ({ id, title, description, address }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  header: {
+    marginTop: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+  },
+  title: {
+    fontWeight: "700",
+    fontSize: 18,
+  },
+  description: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginLeft: 14,
+  },
+  cards: {
+    paddingTop: 16,
+  },
+});
 
 export default FeaturedRow;

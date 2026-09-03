@@ -1,9 +1,14 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import React from "react";
 import { useSelector } from "react-redux";
 import { selectItems, selectItemsTotal } from "../features/itemSlice";
 import { useNavigation } from "@react-navigation/native";
-import Currency from "react-currency-formatter";
+import Currency from "./Currency";
 
 const CartIcon = () => {
   const items = useSelector(selectItems);
@@ -14,25 +19,60 @@ const CartIcon = () => {
   }
 
   return (
-    <View className="absolute bottom-12 w-full z-50">
+    <View style={styles.wrapper}>
       <TouchableOpacity
         onPress={() => navigation.navigate("Cart")}
-        className="mx-5 bg-[#F86874] p-3 rounded-lg flex-row items-center space-x-1"
+        style={styles.button}
       >
-        <Text className="text-white font-extraBold text-lg bg-gray-500 py-1 px-4 rounded-full ">
-          {items.length}
-        </Text>
+        <Text style={styles.count}>{items.length}</Text>
 
-        <Text className="flex-1 text-white font-extrabold text-lg text-center">
-          View Cart
-        </Text>
+        <Text style={styles.label}>View Cart</Text>
 
-        <Text className="text-lg text-white font-extrabold">
+        <Text style={styles.total}>
           <Currency quantity={cartTotal} currency="PHP" />
         </Text>
       </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  wrapper: {
+    position: "absolute",
+    bottom: 48,
+    width: "100%",
+    zIndex: 50,
+  },
+  button: {
+    marginHorizontal: 20,
+    backgroundColor: "#F86874",
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  count: {
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: 18,
+    backgroundColor: "#6b7280",
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 9999,
+  },
+  label: {
+    flex: 1,
+    color: "#ffffff",
+    fontWeight: "800",
+    fontSize: 18,
+    textAlign: "center",
+  },
+  total: {
+    fontSize: 18,
+    color: "#ffffff",
+    fontWeight: "800",
+  },
+});
 
 export default CartIcon;

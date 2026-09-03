@@ -1,4 +1,10 @@
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+} from "react-native";
 import React from "react";
 import { StarIcon } from "react-native-heroicons/solid";
 import { LocationMarkerIcon } from "react-native-heroicons/outline";
@@ -19,7 +25,6 @@ const RestaurantCard = ({
 }) => {
   const navigation = useNavigation();
 
-  // create navigation to restaurant screen
   const handleNavigation = () => {
     navigation.navigate("Restaurant", {
       id,
@@ -36,37 +41,67 @@ const RestaurantCard = ({
   };
 
   return (
-    <TouchableOpacity
-      className="bg-white mr-3 shadow"
-      onPress={handleNavigation}
-    >
+    <TouchableOpacity style={styles.card} onPress={handleNavigation}>
       <Image
         source={{
           uri: urlFor(imgUrl).url(),
         }}
-        // place it in the center of the card
-        style={{
-          width: 200,
-          height: 200,
-          borderRadius: 10,
-          overflow: "hidden",
-        }}
+        style={styles.image}
       />
-      <View className="px-3 pb-4">
-        <Text className="font-bold text-lg pt-2">{title}</Text>
-        <View className="flex-row items-center space-x-1">
+      <View style={styles.body}>
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.metaRow}>
           <StarIcon color="#FCBF67" size={22} />
-          <Text className="text-xs text-gray-500">
-            <Text className="text-500">{rating}</Text> . {genre}
+          <Text style={styles.metaText}>
+            <Text style={styles.metaAccent}>{rating}</Text> . {genre}
           </Text>
         </View>
-        <View className="flex-row items-center space-x-1">
+        <View style={styles.metaRow}>
           <LocationMarkerIcon color="gray" size={22} />
-          <Text className="text-xs text-gray-500">Nearby . {address}</Text>
+          <Text style={styles.metaText}>Nearby . {address}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#ffffff",
+    marginRight: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  body: {
+    paddingHorizontal: 12,
+    paddingBottom: 16,
+  },
+  title: {
+    fontWeight: "700",
+    fontSize: 18,
+    paddingTop: 8,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  metaAccent: {
+    color: "#6b7280",
+  },
+});
 
 export default RestaurantCard;
