@@ -6,14 +6,17 @@ import {
   Linking,
   StyleSheet,
   Platform,
+  TouchableOpacity,
 } from "react-native";
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import { selectRestaurant } from "../features/restaurantSlice";
-import { TouchableOpacity } from "react-native-gesture-handler";
+import { selectItemsTotal } from "../features/itemSlice";
+import { TouchableOpacity as GHTouchableOpacity } from "react-native-gesture-handler";
 import { XIcon } from "react-native-heroicons/solid";
 import * as Progress from "react-native-progress";
+import Currency from "../components/Currency";
 
 let MapView = null;
 let Marker = null;
@@ -22,6 +25,12 @@ if (Platform.OS !== "web") {
   MapView = Maps.default;
   Marker = Maps.Marker;
 }
+
+const TIP_OPTIONS = [
+  { id: "ten", label: "10%", value: 0.1 },
+  { id: "fifteen", label: "15%", value: 0.15 },
+  { id: "twenty", label: "20%", value: 0.2 },
+];
 
 const WebMapPlaceholder = ({ restaurant }) => (
   <View style={styles.webMapFallback}>
@@ -36,15 +45,30 @@ const WebMapPlaceholder = ({ restaurant }) => (
 const DeliveryScreen = () => {
   const navigation = useNavigation();
   const restaurant = useSelector(selectRestaurant);
+  const cartTotal = useSelector(selectItemsTotal);
+  const [selectedTipId, setSelectedTipId] = useState(null);
+
+  const selectedTip = useMemo(
+    () => TIP_OPTIONS.find((t) => t.id === selectedTipId) || null,
+    [selectedTipId]
+  );
+
+  const tipAmount = selectedTip ? cartTotal * selectedTip.value : 0;
+
+  const handleSelectTip = (option) => {
+    setSelectedTipId((current) =>
+      current === option.id ? null : option.id
+    );
+  };
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.topSafeArea}>
         <View style={styles.topBar}>
           <Text style={styles.helpText}>Order Help</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+          <GHTouchableOpacity onPress={() => navigation.navigate("Home")}>
             <XIcon color={"#fff"} size={30} />
-          </TouchableOpacity>
+          </GHTouchableOpacity>
         </View>
 
         <View style={styles.statusCard}>
@@ -92,19 +116,61 @@ const DeliveryScreen = () => {
       )}
 
       <SafeAreaView style={styles.bottomBar}>
-        <Image
-          source={require("../assets/images/logo.png")}
-          style={styles.bottomLogo}
-        />
-        <View style={styles.riderInfo}>
-          <Text style={styles.riderName}>Amir Muhalli</Text>
-          <Text style={styles.riderRole}>Your Rider</Text>
+        <View style={styles.tipCard}>
+          <Text style={styles.tipHeading}>Tip your rider</Text>
+          <Text style={styles.tipSub}>
+            Show appreciation for great service.
+          </Text>
+          <View style={styles.tipRow}>
+            {TIP_OPTIONS.map((option) => {
+              const isSelected = option.id === selectedTipId;
+              return (
+                <TouchableOpacity
+                  key={option.id}
+                  onPress={() => handleSelectTip(option)}
+                  style={[
+                    styles.tipOption,
+                    isSelected && styles.tipOptionSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.tipOptionLabel,
+                      isSelected && styles.tipOptionLabelSelected,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {selectedTip ? (
+            <Text style={styles.tipAdded}>
+              Tip added: <Currency quantity={tipAmount} currency="PHP" />
+            </Text>
+          ) : (
+            <Text style={styles.tipHint}>
+              Tap a tip option to add a tip to your order.
+            </Text>
+          )}
         </View>
-        <TouchableOpacity
-          onPress={() => Linking.openURL("https://portf-amir23.web.app")}
-        >
-          <Text style={styles.callText}>Call</Text>
-        </TouchableOpacity>
+
+        <View style={styles.riderBar}>
+          <Image
+            source={require("../assets/images/logo.png")}
+            style={styles.bottomLogo}
+          />
+          <View style={styles.riderInfo}>
+            <Text style={styles.riderName}>Amir Muhalli</Text>
+            <Text style={styles.riderRole}>Your Rider</Text>
+          </View>
+          <GHTouchableOpacity
+            onPress={() => Linking.openURL("https://portf-amir23.web.app")}
+          >
+            <Text style={styles.callText}>Call</Text>
+          </GHTouchableOpacity>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -192,6 +258,60 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   bottomBar: {
+    backgroundColor: "#ffffff",
+  },
+  tipCard: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderColor: "#e5e7eb",
+    gap: 8,
+  },
+  tipHeading: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#374151",
+  },
+  tipSub: {
+    color: "#6b7280",
+    fontSize: 12,
+  },
+  tipRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  tipOption: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+  },
+  tipOptionSelected: {
+    borderColor: "#F86874",
+    backgroundColor: "#fff1f2",
+  },
+  tipOptionLabel: {
+    fontWeight: "700",
+    color: "#374151",
+  },
+  tipOptionLabelSelected: {
+    color: "#F86874",
+  },
+  tipAdded: {
+    marginTop: 8,
+    color: "#F86874",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  tipHint: {
+    marginTop: 8,
+    color: "#6b7280",
+    fontSize: 12,
+  },
+  riderBar: {
     backgroundColor: "#ffffff",
     flexDirection: "row",
     alignItems: "center",

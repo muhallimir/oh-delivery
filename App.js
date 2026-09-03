@@ -9,6 +9,7 @@ import CartScreen from "./screens/CartScreen";
 import "react-native-gesture-handler";
 import PreparingOrderScreen from "./screens/PreparingOrderScreen";
 import DeliveryScreen from "./screens/DeliveryScreen";
+import OrderHistoryScreen from "./screens/OrderHistoryScreen";
 
 const Stack = createStackNavigator();
 
@@ -20,6 +21,10 @@ export default function App() {
           <Stack.Group screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Restaurant" component={RestaurantScreen} />
+            <Stack.Screen
+              name="OrderHistory"
+              component={OrderHistoryScreen}
+            />
           </Stack.Group>
           <Stack.Group
             screenOptions={{

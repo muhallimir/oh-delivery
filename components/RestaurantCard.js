@@ -6,10 +6,18 @@ import {
   StyleSheet,
 } from "react-native";
 import React from "react";
-import { StarIcon } from "react-native-heroicons/solid";
-import { LocationMarkerIcon } from "react-native-heroicons/outline";
+import { StarIcon, HeartIcon as HeartSolid } from "react-native-heroicons/solid";
+import {
+  HeartIcon as HeartOutline,
+  LocationMarkerIcon,
+} from "react-native-heroicons/outline";
 import { urlFor } from "../sanity";
 import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  selectIsFavorite,
+  toggleFavorite,
+} from "../features/favoritesSlice";
 
 const RestaurantCard = ({
   id,
@@ -24,6 +32,8 @@ const RestaurantCard = ({
   lat,
 }) => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const isFavorite = useSelector(selectIsFavorite(id));
 
   const handleNavigation = () => {
     navigation.navigate("Restaurant", {
@@ -40,14 +50,31 @@ const RestaurantCard = ({
     });
   };
 
+  const handleToggleFavorite = (e) => {
+    e.stopPropagation && e.stopPropagation();
+    dispatch(toggleFavorite(id));
+  };
+
   return (
     <TouchableOpacity style={styles.card} onPress={handleNavigation}>
-      <Image
-        source={{
-          uri: urlFor(imgUrl).url(),
-        }}
-        style={styles.image}
-      />
+      <View style={styles.imageWrap}>
+        <Image
+          source={{
+            uri: urlFor(imgUrl).url(),
+          }}
+          style={styles.image}
+        />
+        <TouchableOpacity
+          style={styles.heartButton}
+          onPress={handleToggleFavorite}
+        >
+          {isFavorite ? (
+            <HeartSolid color="#F86874" size={26} />
+          ) : (
+            <HeartOutline color="#ffffff" size={26} />
+          )}
+        </TouchableOpacity>
+      </View>
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>
         <View style={styles.metaRow}>
@@ -75,11 +102,22 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
     elevation: 1,
   },
+  imageWrap: {
+    position: "relative",
+  },
   image: {
     width: 200,
     height: 200,
     borderRadius: 10,
     overflow: "hidden",
+  },
+  heartButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 9999,
+    padding: 6,
   },
   body: {
     paddingHorizontal: 12,

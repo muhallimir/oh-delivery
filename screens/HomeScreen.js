@@ -1,29 +1,62 @@
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import logo from "../assets/images/logo.png";
-import { Text, View, Image, TextInput, ScrollView, StyleSheet } from "react-native";
+import {
+  Text,
+  View,
+  Image,
+  TextInput,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import {
   UserIcon,
   ChevronDownIcon,
   SearchIcon,
   AdjustmentsIcon,
+  ShoppingBagIcon,
 } from "react-native-heroicons/outline";
 import Categories from "../components/Categories";
 import FeaturedRow from "../components/FeaturedRow";
 import { useNavigation } from "@react-navigation/core";
-import client from "../sanity";
+import { useDispatch } from "react-redux";
+import {
+  loadFavorites,
+  persistFavorites,
+  selectFavorites,
+} from "../features/favoritesSlice";
+import { loadOrders, persistOrders, selectOrders } from "../features/ordersSlice";
+import { useSelector } from "react-redux";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const [featuredCategories, setFeaturedCategories] = useState([]);
+  const favorites = useSelector(selectFavorites);
+  const orders = useSelector(selectOrders);
+
+  useEffect(() => {
+    dispatch(loadFavorites());
+    dispatch(loadOrders());
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(persistFavorites(favorites));
+  }, [dispatch, favorites]);
+
+  useEffect(() => {
+    dispatch(persistOrders(orders));
+  }, [dispatch, orders]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
-  }, []);
+  }, [navigation]);
 
-  useEffect(() => {
+  const handleNavigation = async () => {
+    const { client } = await import("../sanity");
     client
       .fetch(
         `*[_type == "featured"] {
@@ -37,6 +70,10 @@ const HomeScreen = () => {
       .then((data) => {
         setFeaturedCategories(data);
       });
+  };
+
+  useEffect(() => {
+    handleNavigation();
   }, []);
 
   return (
@@ -50,6 +87,17 @@ const HomeScreen = () => {
             <ChevronDownIcon size={20} color="#F86874" />
           </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("OrderHistory")}
+          style={styles.ordersButton}
+        >
+          <ShoppingBagIcon size={28} color="#F86874" />
+          {orders.length > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{orders.length}</Text>
+            </View>
+          ) : null}
+        </TouchableOpacity>
         <UserIcon size={35} color="#F86874" />
       </View>
 
@@ -112,6 +160,27 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontWeight: "700",
     fontSize: 20,
+  },
+  ordersButton: {
+    padding: 4,
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: "#F86874",
+    borderRadius: 9999,
+    minWidth: 18,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "700",
   },
   searchRow: {
     flexDirection: "row",

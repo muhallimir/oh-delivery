@@ -12,15 +12,21 @@ import { urlFor } from "../sanity";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
+  HeartIcon as HeartSolid,
   LocationMarkerIcon,
   QuestionMarkCircleIcon,
   StarIcon,
 } from "react-native-heroicons/solid";
+import { HeartIcon as HeartOutline } from "react-native-heroicons/outline";
 import DishRow from "../components/DishRow";
 import CartIcon from "../components/CartIcon";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { setRestaurant } from "../features/restaurantSlice";
+import {
+  selectIsFavorite,
+  toggleFavorite,
+} from "../features/favoritesSlice";
 
 const RestaurantScreen = () => {
   const navigation = useNavigation();
@@ -39,6 +45,7 @@ const RestaurantScreen = () => {
       lat,
     },
   } = useRoute();
+  const isFavorite = useSelector(selectIsFavorite(id));
 
   useEffect(() => {
     dispatch(
@@ -77,6 +84,16 @@ const RestaurantScreen = () => {
             onPress={() => navigation.goBack()}
           >
             <ArrowLeftIcon size={20} color="#F86874" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={() => dispatch(toggleFavorite(id))}
+          >
+            {isFavorite ? (
+              <HeartSolid color="#F86874" size={22} />
+            ) : (
+              <HeartOutline color="#F86874" size={22} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -139,6 +156,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 56,
     left: 20,
+    padding: 8,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 9999,
+  },
+  favoriteButton: {
+    position: "absolute",
+    top: 56,
+    right: 20,
     padding: 8,
     backgroundColor: "#f3f4f6",
     borderRadius: 9999,
