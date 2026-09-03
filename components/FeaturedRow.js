@@ -4,9 +4,20 @@ import { ArrowRightIcon } from "react-native-heroicons/outline";
 import RestaurantCard from "./RestaurantCard";
 import client from "../sanity";
 
-const FeaturedRow = ({ id, title, description, address }) => {
+const FeaturedRow = ({
+  id,
+  title,
+  description,
+  address,
+  restaurantsOverride,
+}) => {
   const [restaurants, setRestaurants] = useState([]);
+
   useEffect(() => {
+    if (Array.isArray(restaurantsOverride)) {
+      setRestaurants(restaurantsOverride);
+      return;
+    }
     client
       .fetch(
         `*[_type == "featured" && _id == $id] {
@@ -25,7 +36,9 @@ const FeaturedRow = ({ id, title, description, address }) => {
       .then((data) => {
         setRestaurants(data?.restaurants);
       });
-  }, []);
+  }, [id, restaurantsOverride]);
+
+  if (!restaurants || restaurants.length === 0) return null;
 
   return (
     <View>
@@ -47,7 +60,7 @@ const FeaturedRow = ({ id, title, description, address }) => {
             key={index}
             id={restaurant._id}
             address={
-              restaurant.address.length > 20
+              restaurant.address && restaurant.address.length > 20
                 ? `${restaurant.address.slice(0, 20)}...`
                 : restaurant.address
             }

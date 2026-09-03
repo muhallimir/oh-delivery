@@ -16,18 +16,29 @@ import {
   SearchIcon,
   AdjustmentsIcon,
   ShoppingBagIcon,
+  HeartIcon,
 } from "react-native-heroicons/outline";
 import Categories from "../components/Categories";
 import FeaturedRow from "../components/FeaturedRow";
+import CuisineFilter from "../components/CuisineFilter";
+import DietaryFilter from "../components/DietaryFilter";
 import { useNavigation } from "@react-navigation/core";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   loadFavorites,
   persistFavorites,
   selectFavorites,
 } from "../features/favoritesSlice";
 import { loadOrders, persistOrders, selectOrders } from "../features/ordersSlice";
-import { useSelector } from "react-redux";
+import { loadReviews, persistReviews, selectReviews } from "../features/reviewsSlice";
+import { loadAddresses, persistAddresses, selectAddresses } from "../features/addressesSlice";
+import { loadPayment, persistPayment } from "../features/paymentSlice";
+import {
+  selectCuisine,
+  selectDietary,
+  cuisineMatches,
+} from "../features/filtersSlice";
+import { supportsDiet } from "../utils/dietary";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -35,10 +46,18 @@ const HomeScreen = () => {
   const [featuredCategories, setFeaturedCategories] = useState([]);
   const favorites = useSelector(selectFavorites);
   const orders = useSelector(selectOrders);
+  const reviews = useSelector(selectReviews);
+  const addresses = useSelector(selectAddresses);
+  const payment = useSelector((s) => s.payment);
+  const cuisine = useSelector(selectCuisine);
+  const dietary = useSelector(selectDietary);
 
   useEffect(() => {
     dispatch(loadFavorites());
     dispatch(loadOrders());
+    dispatch(loadReviews());
+    dispatch(loadAddresses());
+    dispatch(loadPayment());
   }, [dispatch]);
 
   useEffect(() => {
@@ -48,6 +67,18 @@ const HomeScreen = () => {
   useEffect(() => {
     dispatch(persistOrders(orders));
   }, [dispatch, orders]);
+
+  useEffect(() => {
+    dispatch(persistReviews(reviews));
+  }, [dispatch, reviews]);
+
+  useEffect(() => {
+    dispatch(persistAddresses(addresses));
+  }, [dispatch, addresses]);
+
+  useEffect(() => {
+    dispatch(persistPayment(payment));
+  }, [dispatch, payment]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -63,7 +94,10 @@ const HomeScreen = () => {
         ...,
         restaurants[]->{
           ...,
-          dishes[]->
+          dishes[]->,
+          type->{
+            name
+          }
         }
       }`
       )
@@ -75,6 +109,15 @@ const HomeScreen = () => {
   useEffect(() => {
     handleNavigation();
   }, []);
+
+  const filterRestaurants = (restaurants = []) => {
+    if (!restaurants) return [];
+    return restaurants.filter((r) => {
+      if (!cuisineMatches(r.type?.name, cuisine)) return false;
+      if (dietary.length === 0) return true;
+      return dietary.every((d) => supportsDiet(r.type?.name, d));
+    });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -88,10 +131,18 @@ const HomeScreen = () => {
           </Text>
         </View>
         <TouchableOpacity
-          onPress={() => navigation.navigate("OrderHistory")}
-          style={styles.ordersButton}
+          onPress={() => navigation.navigate("Favorites")}
+          style={styles.iconButton}
+          testID="open-favorites"
         >
-          <ShoppingBagIcon size={28} color="#F86874" />
+          <HeartIcon size={26} color="#F86874" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("OrderHistory")}
+          style={styles.iconButton}
+          testID="open-orders"
+        >
+          <ShoppingBagIcon size={26} color="#F86874" />
           {orders.length > 0 ? (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{orders.length}</Text>
@@ -117,14 +168,21 @@ const HomeScreen = () => {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <Categories />
-        {featuredCategories?.map((category, index) => (
-          <FeaturedRow
-            key={index}
-            id={category._id}
-            title={category.title}
-            description={category.short_description}
-          />
-        ))}
+        <CuisineFilter />
+        <DietaryFilter />
+        {featuredCategories?.map((category, index) => {
+          const filtered = filterRestaurants(category.restaurants);
+          if (filtered.length === 0) return null;
+          return (
+            <FeaturedRow
+              key={index}
+              id={category._id}
+              title={category.title}
+              description={category.short_description}
+              restaurantsOverride={filtered}
+            />
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,7 +219,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 20,
   },
-  ordersButton: {
+  iconButton: {
     padding: 4,
     position: "relative",
   },

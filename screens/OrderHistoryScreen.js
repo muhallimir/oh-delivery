@@ -5,26 +5,35 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
+  Alert,
 } from "react-native";
 import React, { useLayoutEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { XCircleIcon } from "react-native-heroicons/solid";
 import { selectOrders } from "../features/ordersSlice";
+import { seedCart } from "../features/itemSlice";
 import Currency from "../components/Currency";
 
 const formatDate = (iso) => {
   if (!iso) return "";
   try {
-    const d = new Date(iso);
-    return d.toLocaleString();
+    return new Date(iso).toLocaleString();
   } catch (e) {
     return iso;
   }
 };
 
+const STATUS_LABEL = {
+  placed: "Placed",
+  preparing: "Preparing",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+};
+
 const OrderHistoryScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const orders = useSelector(selectOrders);
 
   useLayoutEffect(() => {
@@ -32,6 +41,28 @@ const OrderHistoryScreen = () => {
       headerShown: false,
     });
   }, [navigation]);
+
+  const handleReorder = (order) => {
+    if (!order.items || order.items.length === 0) {
+      Alert.alert("Nothing to reorder", "This order has no items.");
+      return;
+    }
+    const seedItems = [];
+    for (const item of order.items) {
+      for (let i = 0; i < (item.quantity || 1); i += 1) {
+        seedItems.push({
+          id: item.id,
+          lineId: `${item.id}-${Date.now()}-${i}`,
+          name: item.name,
+          price: item.price,
+          image: item.image,
+          description: item.description,
+        });
+      }
+    }
+    dispatch(seedCart(seedItems));
+    navigation.navigate("Cart");
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -45,13 +76,14 @@ const OrderHistoryScreen = () => {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.closeButton}
+          testID="order-history-close"
         >
           <XCircleIcon height={50} width={50} color="#F86874" />
         </TouchableOpacity>
       </View>
 
       {orders.length === 0 ? (
-        <View style={styles.emptyWrap}>
+        <View style={styles.emptyWrap} testID="order-history-empty">
           <Text style={styles.emptyTitle}>No orders yet</Text>
           <Text style={styles.emptySubtitle}>
             Your placed orders will appear here.
@@ -62,13 +94,22 @@ const OrderHistoryScreen = () => {
           data={orders}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.listContent}
+          testID="order-history-list"
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("OrderDetail", { orderId: item.id })
+              }
+              style={styles.card}
+              testID={`order-row-${item.id}`}
+            >
               <View style={styles.cardHeader}>
                 <Text style={styles.restaurantName}>
                   {item.restaurantTitle || "Restaurant"}
                 </Text>
-                <Text style={styles.status}>{item.status || "preparing"}</Text>
+                <Text style={styles.status}>
+                  {STATUS_LABEL[item.status] || item.status}
+                </Text>
               </View>
               <View style={styles.cardRow}>
                 <Text style={styles.label}>Total</Text>
@@ -82,7 +123,14 @@ const OrderHistoryScreen = () => {
                   {item.itemCount} item{item.itemCount === 1 ? "" : "s"}
                 </Text>
               ) : null}
-            </View>
+              <TouchableOpacity
+                style={styles.reorderButton}
+                onPress={() => handleReorder(item)}
+                testID={`reorder-${item.id}`}
+              >
+                <Text style={styles.reorderText}>Reorder</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
           )}
         />
       )}
@@ -182,6 +230,19 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     fontSize: 12,
     marginTop: 2,
+  },
+  reorderButton: {
+    marginTop: 8,
+    backgroundColor: "#fff1f2",
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#fecdd3",
+  },
+  reorderText: {
+    color: "#F86874",
+    fontWeight: "700",
   },
   emptyWrap: {
     flex: 1,

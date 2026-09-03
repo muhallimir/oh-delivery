@@ -18,6 +18,8 @@ import {
   selectIsFavorite,
   toggleFavorite,
 } from "../features/favoritesSlice";
+import { DietaryBadges } from "./DietaryFilter";
+import { dietaryTagsForCuisine } from "../utils/dietary";
 
 const RestaurantCard = ({
   id,
@@ -55,6 +57,8 @@ const RestaurantCard = ({
     dispatch(toggleFavorite(id));
   };
 
+  const dietary = dietaryTagsForCuisine(genre);
+
   return (
     <TouchableOpacity style={styles.card} onPress={handleNavigation}>
       <View style={styles.imageWrap}>
@@ -87,6 +91,7 @@ const RestaurantCard = ({
           <LocationMarkerIcon color="gray" size={22} />
           <Text style={styles.metaText}>Nearby . {address}</Text>
         </View>
+        <DietaryBadges restaurantDiet={dietary} />
       </View>
     </TouchableOpacity>
   );

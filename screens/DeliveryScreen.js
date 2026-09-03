@@ -7,29 +7,36 @@ import {
   StyleSheet,
   Platform,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectRestaurant } from "../features/restaurantSlice";
 import { selectItemsTotal } from "../features/itemSlice";
 import { TouchableOpacity as GHTouchableOpacity } from "react-native-gesture-handler";
 import { XIcon } from "react-native-heroicons/solid";
-import * as Progress from "react-native-progress";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Currency from "../components/Currency";
+
+const TIP_STORAGE_KEY = "oh-delivery:last-tip";
 
 let MapView = null;
 let Marker = null;
 if (Platform.OS !== "web") {
-  const Maps = require("react-native-maps");
-  MapView = Maps.default;
-  Marker = Maps.Marker;
+  try {
+    const Maps = require("react-native-maps");
+    MapView = Maps.default;
+    Marker = Maps.Marker;
+  } catch (e) {
+    MapView = null;
+  }
 }
 
 const TIP_OPTIONS = [
-  { id: "ten", label: "10%", value: 0.1 },
-  { id: "fifteen", label: "15%", value: 0.15 },
-  { id: "twenty", label: "20%", value: 0.2 },
+  { id: "ten", label: "10%", value: 0.1, type: "percent" },
+  { id: "fifteen", label: "15%", value: 0.15, type: "percent" },
+  { id: "twenty", label: "20%", value: 0.2, type: "percent" },
 ];
 
 const WebMapPlaceholder = ({ restaurant }) => (
@@ -44,21 +51,67 @@ const WebMapPlaceholder = ({ restaurant }) => (
 
 const DeliveryScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const restaurant = useSelector(selectRestaurant);
   const cartTotal = useSelector(selectItemsTotal);
   const [selectedTipId, setSelectedTipId] = useState(null);
+  const [customAmount, setCustomAmount] = useState("");
+  const [customMode, setCustomMode] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        if (Platform.OS !== "web") {
+          const raw = await AsyncStorage.getItem(TIP_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.id) {
+              setSelectedTipId(parsed.id);
+            }
+            if (parsed?.customAmount) {
+              setCustomAmount(String(parsed.customAmount));
+              setCustomMode(parsed.id === "custom");
+            }
+          }
+        }
+      } catch (e) {
+      } finally {
+        setHydrated(true);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (Platform.OS === "web") return;
+    AsyncStorage.setItem(
+      TIP_STORAGE_KEY,
+      JSON.stringify({ id: selectedTipId, customAmount })
+    ).catch(() => {});
+  }, [selectedTipId, customAmount, hydrated]);
 
   const selectedTip = useMemo(
     () => TIP_OPTIONS.find((t) => t.id === selectedTipId) || null,
     [selectedTipId]
   );
 
-  const tipAmount = selectedTip ? cartTotal * selectedTip.value : 0;
+  const tipAmount = selectedTip
+    ? cartTotal * selectedTip.value
+    : customMode && customAmount && !Number.isNaN(parseFloat(customAmount))
+    ? parseFloat(customAmount)
+    : 0;
 
   const handleSelectTip = (option) => {
     setSelectedTipId((current) =>
       current === option.id ? null : option.id
     );
+    setCustomMode(false);
+  };
+
+  const handleEnableCustom = () => {
+    setSelectedTipId(null);
+    setCustomMode(true);
   };
 
   return (
@@ -82,10 +135,6 @@ const DeliveryScreen = () => {
               style={styles.riderImage}
             />
           </View>
-          <Progress.Bar size={30} indeterminate={true} color={"#cd6465"} />
-          <Text style={styles.statusHint}>
-            Your order is on the way. Almost there!
-          </Text>
         </View>
       </SafeAreaView>
 
@@ -94,8 +143,8 @@ const DeliveryScreen = () => {
       ) : (
         <MapView
           initialRegion={{
-            latitude: restaurant.lat,
-            longitude: restaurant.long,
+            latitude: restaurant?.lat || 14.5995,
+            longitude: restaurant?.long || 120.9842,
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           }}
@@ -104,11 +153,11 @@ const DeliveryScreen = () => {
         >
           <Marker
             coordinate={{
-              latitude: restaurant.lat,
-              longitude: restaurant.long,
+              latitude: restaurant?.lat || 14.5995,
+              longitude: restaurant?.long || 120.9842,
             }}
-            title={restaurant.title}
-            description={restaurant.short_description}
+            title={restaurant?.title}
+            description={restaurant?.short_description}
             identifier="origin"
             pinColor="#cd6465"
           />
@@ -123,7 +172,7 @@ const DeliveryScreen = () => {
           </Text>
           <View style={styles.tipRow}>
             {TIP_OPTIONS.map((option) => {
-              const isSelected = option.id === selectedTipId;
+              const isSelected = option.id === selectedTipId && !customMode;
               return (
                 <TouchableOpacity
                   key={option.id}
@@ -132,6 +181,7 @@ const DeliveryScreen = () => {
                     styles.tipOption,
                     isSelected && styles.tipOptionSelected,
                   ]}
+                  testID={`tip-${option.id}`}
                 >
                   <Text
                     style={[
@@ -144,16 +194,49 @@ const DeliveryScreen = () => {
                 </TouchableOpacity>
               );
             })}
+            <TouchableOpacity
+              onPress={handleEnableCustom}
+              style={[
+                styles.tipOption,
+                customMode && styles.tipOptionSelected,
+              ]}
+              testID="tip-custom"
+            >
+              <Text
+                style={[
+                  styles.tipOptionLabel,
+                  customMode && styles.tipOptionLabelSelected,
+                ]}
+              >
+                Other
+              </Text>
+            </TouchableOpacity>
           </View>
-          {selectedTip ? (
-            <Text style={styles.tipAdded}>
-              Tip added: <Currency quantity={tipAmount} currency="PHP" />
+          {customMode ? (
+            <View style={styles.customRow}>
+              <TextInput
+                style={styles.customInput}
+                placeholder="Amount"
+                keyboardType="number-pad"
+                value={customAmount}
+                onChangeText={setCustomAmount}
+                testID="tip-custom-input"
+              />
+              <Text style={styles.customCurrency}>PHP</Text>
+            </View>
+          ) : null}
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Tip amount</Text>
+            <Text style={styles.summaryValue}>
+              <Currency quantity={tipAmount} currency="PHP" />
             </Text>
-          ) : (
-            <Text style={styles.tipHint}>
-              Tap a tip option to add a tip to your order.
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Order total</Text>
+            <Text style={styles.summaryValue}>
+              <Currency quantity={cartTotal + tipAmount} currency="PHP" />
             </Text>
-          )}
+          </View>
         </View>
 
         <View style={styles.riderBar}>
@@ -227,10 +310,6 @@ const styles = StyleSheet.create({
     width: 80,
     top: 4,
   },
-  statusHint: {
-    marginTop: 12,
-    color: "#6b7280",
-  },
   map: {
     flex: 1,
     marginTop: -40,
@@ -300,16 +379,34 @@ const styles = StyleSheet.create({
   tipOptionLabelSelected: {
     color: "#F86874",
   },
-  tipAdded: {
+  customRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
-    color: "#F86874",
-    fontWeight: "700",
-    fontSize: 14,
+    gap: 8,
   },
-  tipHint: {
-    marginTop: 8,
+  customInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  customCurrency: {
     color: "#6b7280",
-    fontSize: 12,
+    fontWeight: "700",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  summaryLabel: {
+    color: "#6b7280",
+  },
+  summaryValue: {
+    fontWeight: "700",
   },
   riderBar: {
     backgroundColor: "#ffffff",

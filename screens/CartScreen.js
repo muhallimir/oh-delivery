@@ -6,13 +6,15 @@ import {
   Image,
   StyleSheet,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import { selectRestaurant } from "../features/restaurantSlice";
 import {
   decreaseItemCount,
-  selectItems,
+  increaseItemCount,
+  removeItemLine,
+  selectCartLines,
   selectItemsTotal,
 } from "../features/itemSlice";
 import { XCircleIcon } from "react-native-heroicons/solid";
@@ -21,21 +23,16 @@ import { ScrollView } from "react-native-gesture-handler";
 import { urlFor } from "../sanity";
 import Currency from "../components/Currency";
 
+const DELIVERY_FEE = 74;
+
 const CartScreen = () => {
   const navigation = useNavigation();
   const restaurant = useSelector(selectRestaurant);
   const cartTotal = useSelector(selectItemsTotal);
-  const items = useSelector(selectItems);
+  const lines = useSelector(selectCartLines);
   const dispatch = useDispatch();
-  const [groupedItemsInCart, setGroupedItemsInCart] = useState([]);
 
-  useEffect(() => {
-    const groupedItems = items.reduce((results, item) => {
-      (results[item.id] = results[item.id] || []).push(item);
-      return results;
-    }, {});
-    setGroupedItemsInCart(groupedItems);
-  }, [items]);
+  const grandTotal = cartTotal + DELIVERY_FEE;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -43,7 +40,7 @@ const CartScreen = () => {
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Current items</Text>
-            <Text style={styles.headerSubtitle}>{restaurant.title}</Text>
+            <Text style={styles.headerSubtitle}>{restaurant?.title}</Text>
           </View>
 
           <TouchableOpacity
@@ -63,31 +60,86 @@ const CartScreen = () => {
         </View>
 
         <ScrollView>
-          {Object.entries(groupedItemsInCart).map(([key, items]) => (
-            <View key={key} style={styles.itemRow}>
-              <Text style={styles.itemQty}>{items.length} x</Text>
-
-              <Image
-                source={{
-                  uri: urlFor(items[0]?.image).url(),
-                }}
-                style={styles.itemImage}
-              />
-
-              <Text style={styles.itemName}>{items[0]?.name}</Text>
-              <Text style={styles.itemPrice}>
-                <Currency quantity={items[0]?.price} currency="PHP" />
+          {lines.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyTitle}>Your cart is empty</Text>
+              <Text style={styles.emptySubtitle}>
+                Add items from a restaurant to get started.
               </Text>
-              <TouchableOpacity>
-                <Text
-                  style={styles.removeText}
-                  onPress={() => dispatch(decreaseItemCount({ id: key }))}
-                >
-                  Remove
-                </Text>
-              </TouchableOpacity>
             </View>
-          ))}
+          ) : (
+            lines.map((line) => (
+              <View
+                key={line.lineId}
+                style={styles.itemRow}
+                testID={`cart-line-${line.lineId}`}
+              >
+                <Image
+                  source={{
+                    uri: urlFor(line.image).url(),
+                  }}
+                  style={styles.itemImage}
+                />
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{line.name}</Text>
+                  <Text style={styles.itemDescription} numberOfLines={2}>
+                    {line.description}
+                  </Text>
+                  <Text style={styles.itemPrice}>
+                    <Currency quantity={line.price} currency="PHP" />
+                  </Text>
+                  {line.instructions ? (
+                    <Text style={styles.instructions}>
+                      Note: {line.instructions}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.qtyBox}>
+                  <TouchableOpacity
+                    style={styles.qtyButton}
+                    onPress={() =>
+                      dispatch(
+                        decreaseItemCount({ id: line.id })
+                      )
+                    }
+                    testID={`cart-minus-${line.lineId}`}
+                  >
+                    <Text style={styles.qtyButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <Text
+                    style={styles.qtyValue}
+                    testID={`cart-qty-${line.lineId}`}
+                  >
+                    {line.quantity}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.qtyButton}
+                    onPress={() =>
+                      dispatch(
+                        increaseItemCount({
+                          id: line.id,
+                          lineId: line.lineId,
+                          name: line.name,
+                          description: line.description,
+                          price: line.price,
+                          image: line.image,
+                        })
+                      )
+                    }
+                    testID={`cart-plus-${line.lineId}`}
+                  >
+                    <Text style={styles.qtyButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  onPress={() => dispatch(removeItemLine(line.lineId))}
+                  testID={`cart-remove-${line.lineId}`}
+                >
+                  <Text style={styles.removeText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
         </ScrollView>
 
         <View style={styles.totalsBox}>
@@ -99,24 +151,29 @@ const CartScreen = () => {
           </View>
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Deliver</Text>
+            <Text style={styles.totalLabel}>Delivery</Text>
             <Text style={styles.totalLabel}>
-              <Currency quantity={74} currency="PHP" />
+              <Currency quantity={DELIVERY_FEE} currency="PHP" />
             </Text>
           </View>
 
           <View style={styles.totalRow}>
-            <Text>Order Total</Text>
+            <Text style={styles.grandLabel}>Order Total</Text>
             <Text style={styles.totalGrand}>
-              <Currency quantity={cartTotal + 74} currency="PHP" />
+              <Currency quantity={grandTotal} currency="PHP" />
             </Text>
           </View>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate("PrepareOrder")}
-            style={styles.placeOrder}
+            disabled={lines.length === 0}
+            onPress={() => navigation.navigate("Checkout")}
+            style={[
+              styles.placeOrder,
+              lines.length === 0 && styles.placeOrderDisabled,
+            ]}
+            testID="cart-checkout-button"
           >
-            <Text style={styles.placeOrderText}>Place Order</Text>
+            <Text style={styles.placeOrderText}>Proceed to Checkout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -184,38 +241,76 @@ const styles = StyleSheet.create({
   },
   itemRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     backgroundColor: "#ffffff",
-    paddingVertical: 8,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     gap: 12,
     borderBottomWidth: 1,
     borderColor: "#e5e7eb",
   },
-  itemQty: {
-    color: "#F86874",
-  },
   itemImage: {
-    height: 48,
-    width: 48,
+    height: 56,
+    width: 56,
     backgroundColor: "#d1d5db",
-    borderRadius: 9999,
+    borderRadius: 8,
   },
-  itemName: {
+  itemInfo: {
     flex: 1,
   },
+  itemName: {
+    fontWeight: "700",
+    color: "#374151",
+  },
+  itemDescription: {
+    color: "#9ca3af",
+    fontSize: 12,
+    marginTop: 2,
+  },
   itemPrice: {
-    color: "#4b5563",
+    color: "#6b7280",
+    marginTop: 4,
+  },
+  instructions: {
+    color: "#9ca3af",
+    fontSize: 11,
+    marginTop: 4,
+    fontStyle: "italic",
+  },
+  qtyBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  qtyButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#F86874",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  qtyButtonText: {
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  qtyValue: {
+    color: "#374151",
+    fontWeight: "700",
+    minWidth: 20,
+    textAlign: "center",
   },
   removeText: {
     color: "#F86874",
     fontSize: 12,
+    marginTop: 6,
   },
   totalsBox: {
     padding: 20,
     backgroundColor: "#ffffff",
-    marginTop: 20,
-    gap: 16,
+    marginTop: 12,
+    gap: 12,
   },
   totalRow: {
     flexDirection: "row",
@@ -223,6 +318,10 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     color: "#9ca3af",
+  },
+  grandLabel: {
+    fontWeight: "700",
+    color: "#374151",
   },
   totalGrand: {
     fontWeight: "800",
@@ -232,11 +331,28 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
   },
+  placeOrderDisabled: {
+    backgroundColor: "#e5e7eb",
+  },
   placeOrderText: {
     textAlign: "center",
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "700",
+  },
+  emptyWrap: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    color: "#6b7280",
+    textAlign: "center",
   },
 });
 

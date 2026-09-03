@@ -4,6 +4,8 @@ import { Platform } from "react-native";
 
 const STORAGE_KEY = "oh-delivery:orders";
 
+const STATUSES = ["placed", "preparing", "out_for_delivery", "delivered"];
+
 const initialState = {
   orders: [],
 };
@@ -18,7 +20,33 @@ export const ordersSlice = createSlice({
     addOrder: (state, action) => {
       const order = action.payload;
       if (!order || !order.id) return;
-      state.orders = [order, ...state.orders];
+      const now = new Date().toISOString();
+      const enriched = {
+        status: "placed",
+        timeline: [
+          { status: "placed", at: now },
+        ],
+        ...order,
+      };
+      state.orders = [enriched, ...state.orders];
+    },
+    setOrderStatus: (state, action) => {
+      const { id, status } = action.payload || {};
+      if (!id || !status) return;
+      const order = state.orders.find((o) => String(o.id) === String(id));
+      if (!order) return;
+      order.status = status;
+      order.timeline = order.timeline || [];
+      if (
+        !order.timeline.find(
+          (t) => t.status === status
+        )
+      ) {
+        order.timeline = [
+          ...order.timeline,
+          { status, at: new Date().toISOString() },
+        ];
+      }
     },
     clearOrders: (state) => {
       state.orders = [];
@@ -46,8 +74,14 @@ export const loadOrders = () => async (dispatch) => {
   }
 };
 
-export const { setOrders, addOrder, clearOrders } = ordersSlice.actions;
+export const { setOrders, addOrder, setOrderStatus, clearOrders } =
+  ordersSlice.actions;
+
+export const STATUS_FLOW = STATUSES;
 
 export const selectOrders = (state) => state.orders.orders;
+
+export const selectOrderById = (id) => (state) =>
+  state.orders.orders.find((o) => String(o.id) === String(id));
 
 export default ordersSlice.reducer;
