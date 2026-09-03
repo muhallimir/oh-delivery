@@ -1,11 +1,23 @@
 node_modules/
 .expo/
+.expo-shared/
 dist/
 web-build/
 .firebase/
 build/
 
-npm-debug.*
+android/
+ios/
+
+yarn.lock
+yarn-error.log
+npm-debug.log*
+
+.env*
+.env.local
+.env.*.local
+
+*.log
 *.jks
 *.p8
 *.p12
