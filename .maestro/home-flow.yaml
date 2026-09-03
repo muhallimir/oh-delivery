@@ -1,0 +1,17 @@
+appId: com.amirsali.ohdelivery
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Current Location"
+    timeout: 30000
+- takeScreenshot: oh-home
+- assertVisible: "Deliver Now!"
+- assertVisible: "Tea & Frappe"
+- assertVisible: "Pasta"
+- assertVisible: "Snacks"
+- scrollUntilVisible:
+    element: "Combo"
+    direction: RIGHT
+    timeout: 5000
+- takeScreenshot: oh-scroll
