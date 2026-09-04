@@ -17,7 +17,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.amirsali.ohdelivery"
@@ -40,7 +42,10 @@
         "github": "https://github.com/amirsali"
       },
       "description": "Food delivery app built with Expo and React Native",
-      "license": "MIT"
+      "license": "MIT",
+      "eas": {
+        "projectId": "79f633f1-2064-4871-9439-3c0ac18d9183"
+      }
     }
   }
 }
