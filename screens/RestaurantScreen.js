@@ -5,8 +5,9 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  TextInput,
 } from "react-native";
-import React, { useLayoutEffect } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { urlFor } from "../sanity";
 import {
@@ -21,12 +22,50 @@ import { HeartIcon as HeartOutline } from "react-native-heroicons/outline";
 import DishRow from "../components/DishRow";
 import CartIcon from "../components/CartIcon";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
 import { setRestaurant } from "../features/restaurantSlice";
 import {
   selectIsFavorite,
   toggleFavorite,
 } from "../features/favoritesSlice";
+import ReviewsSection from "../components/ReviewsSection";
+import {
+  selectRestaurantAverageRating,
+} from "../features/reviewsSlice";
+import { DietaryBadges } from "../components/DietaryFilter";
+import { dietaryTagsForCuisine } from "../utils/dietary";
+
+const DEFAULT_CATEGORIES = ["Starters", "Mains", "Drinks", "Desserts"];
+
+const hashCategory = (dish) => {
+  const name = (dish?.name || "").toLowerCase();
+  if (
+    name.includes("tea") ||
+    name.includes("drink") ||
+    name.includes("juice") ||
+    name.includes("coffee")
+  ) {
+    return "Drinks";
+  }
+  if (
+    name.includes("cake") ||
+    name.includes("dessert") ||
+    name.includes("ice cream") ||
+    name.includes("frappe")
+  ) {
+    return "Desserts";
+  }
+  if (
+    name.includes("salad") ||
+    name.includes("starter") ||
+    name.includes("appetizer") ||
+    name.includes("soup") ||
+    name.includes("fries") ||
+    name.includes("snack")
+  ) {
+    return "Starters";
+  }
+  return "Mains";
+};
 
 const RestaurantScreen = () => {
   const navigation = useNavigation();
@@ -46,6 +85,8 @@ const RestaurantScreen = () => {
     },
   } = useRoute();
   const isFavorite = useSelector(selectIsFavorite(id));
+  const userAverage = useSelector(selectRestaurantAverageRating(id));
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     dispatch(
@@ -70,6 +111,26 @@ const RestaurantScreen = () => {
     });
   }, [navigation]);
 
+  const grouped = useMemo(() => {
+    const filtered = (dishes || []).filter((d) =>
+      search ? (d.name || "").toLowerCase().includes(search.toLowerCase()) : true
+    );
+    const map = {};
+    DEFAULT_CATEGORIES.forEach((c) => (map[c] = []));
+    for (const dish of filtered) {
+      const cat = hashCategory(dish);
+      map[cat].push(dish);
+    }
+    return map;
+  }, [dishes, search]);
+
+  const categoriesToShow = DEFAULT_CATEGORIES.filter(
+    (c) => grouped[c] && grouped[c].length > 0
+  );
+
+  const effectiveRating = userAverage || rating;
+  const dietary = dietaryTagsForCuisine(genre);
+
   return (
     <>
       <CartIcon />
@@ -82,12 +143,14 @@ const RestaurantScreen = () => {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
+            testID="restaurant-back"
           >
             <ArrowLeftIcon size={20} color="#F86874" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.favoriteButton}
             onPress={() => dispatch(toggleFavorite(id))}
+            testID="restaurant-favorite"
           >
             {isFavorite ? (
               <HeartSolid color="#F86874" size={22} />
@@ -104,7 +167,10 @@ const RestaurantScreen = () => {
               <View style={styles.metaItem}>
                 <StarIcon color="#FCBF67" size={22} />
                 <Text style={styles.metaText}>
-                  <Text style={styles.metaAccent}>{rating}</Text> . {genre}
+                  <Text style={styles.metaAccent}>
+                    {effectiveRating ? effectiveRating.toFixed(1) : rating}
+                  </Text>{" "}
+                  . {genre}
                 </Text>
               </View>
 
@@ -115,6 +181,7 @@ const RestaurantScreen = () => {
             </View>
 
             <Text style={styles.shortDescription}>{short_description}</Text>
+            <DietaryBadges restaurantDiet={dietary} />
           </View>
 
           <TouchableOpacity style={styles.allergyRow}>
@@ -124,19 +191,45 @@ const RestaurantScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <View>
+        <View style={styles.menuHeader}>
           <Text style={styles.menuHeading}>Menu</Text>
-          {dishes.map((dish, index) => (
-            <DishRow
-              key={index}
-              id={dish._id}
-              name={dish.name}
-              description={dish.short_description}
-              price={dish.price}
-              image={dish.image}
-            />
-          ))}
+          <TextInput
+            testID="menu-search-input"
+            placeholder="Search this menu"
+            value={search}
+            onChangeText={setSearch}
+            style={styles.search}
+          />
         </View>
+
+        {categoriesToShow.length === 0 ? (
+          <Text style={styles.emptyText}>No items match your filter.</Text>
+        ) : (
+          categoriesToShow.map((cat) => (
+            <View key={cat} style={styles.categorySection}>
+              <Text style={styles.categoryTitle}>{cat}</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryRow}
+              >
+                {grouped[cat].map((dish) => (
+                  <DishRow
+                    key={dish._id}
+                    id={dish._id}
+                    name={dish.name}
+                    description={dish.short_description}
+                    price={dish.price}
+                    image={dish.image}
+                    variant="card"
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          ))
+        )}
+
+        <ReviewsSection restaurantId={id} />
       </ScrollView>
     </>
   );
@@ -216,12 +309,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  menuHeading: {
+  menuHeader: {
     paddingHorizontal: 16,
     paddingTop: 24,
-    marginBottom: 12,
+  },
+  menuHeading: {
     fontWeight: "700",
     fontSize: 20,
+    marginBottom: 8,
+  },
+  search: {
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  categorySection: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+  },
+  categoryTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#374151",
+    marginBottom: 8,
+  },
+  categoryRow: {
+    paddingVertical: 4,
+    gap: 12,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#9ca3af",
+    paddingVertical: 24,
   },
 });
 

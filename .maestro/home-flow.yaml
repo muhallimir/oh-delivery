@@ -10,8 +10,42 @@ appId: com.amirsali.ohdelivery
 - assertVisible: "Tea & Frappe"
 - assertVisible: "Pasta"
 - assertVisible: "Snacks"
+- assertVisible:
+    text: "Cuisines"
+- assertVisible:
+    text: "All"
+- tapOn:
+    id: "cuisine-chip-Italian"
+- takeScreenshot: oh-italian-filter
+- assertVisible: "Italian"
+- tapOn:
+    id: "cuisine-chip-All"
 - scrollUntilVisible:
     element: "Combo"
     direction: RIGHT
     timeout: 5000
 - takeScreenshot: oh-scroll
+- tapOn:
+    id: "open-orders"
+- extendedWaitUntil:
+    visible: "My Orders"
+    timeout: 15000
+- assertVisible: "My Orders"
+- takeScreenshot: oh-order-history
+- tapOn:
+    id: "order-history-close"
+- extendedWaitUntil:
+    visible: "Current Location"
+    timeout: 15000
+- tapOn:
+    id: "open-favorites"
+- extendedWaitUntil:
+    visible: "Favorites"
+    timeout: 15000
+- assertVisible: "Favorites"
+- takeScreenshot: oh-favorites
+- tapOn:
+    id: "favorites-close"
+- extendedWaitUntil:
+    visible: "Current Location"
+    timeout: 15000
