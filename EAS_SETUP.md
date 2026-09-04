@@ -1,42 +1,31 @@
-# EAS Build + TestFlight Setup
+# EAS Build + TestFlight
 
-This repo uses [Expo Application Services](https://docs.expo.dev/build/introduction/) to build signed `.ipa` files for App Store Connect / TestFlight.
+Linked to `@amirsali/oh-delivery` on EAS. Three build profiles configured.
 
 ## One-time setup
 
-1. Install EAS CLI globally:
-   ```bash
-   npm install -g eas-cli
-   ```
+```bash
+npm install -g eas-cli
+eas login
+eas init --account amirsali --non-interactive
+```
 
-2. Log in (creates/links your Expo account):
-   ```bash
-   eas login
-   ```
-
-3. Initialize EAS for this project (creates the `extra.eas.projectId` entry in `app.json` and links the EAS project):
-   ```bash
-   eas init --id-flag-length 32
-   ```
-   Commit the resulting `app.json` change.
+(Already done for this repo: project ID `79f633f1-2064-4871-9439-3c0ac18d9183` is in `app.json`.)
 
 ## Apple credentials
 
-Two options:
+Pick one:
 
 ### Option A: Apple ID (simpler)
-
 ```bash
-eas submit --platform ios
+eas credentials:configure-build --platform ios --profile production
 ```
-The first time, EAS asks for your Apple ID, App-Specific Password, and Team ID. These are stored encrypted in EAS and reused.
+Prompts for Apple ID + app-specific password + team ID. Stores encrypted on EAS server.
 
-### Option B: App Store Connect API key (recommended for CI)
-
+### Option B: App Store Connect API key (CI-friendly)
 1. App Store Connect > Users and Access > Keys > App Store Connect API > Generate
-2. Download the `.p8` file and note the Key ID and Issuer ID
-3. Save the `.p8` as `~/.appstoreconnect/private_keys/AuthKey_XXXX.p8`
-4. Set environment variables before submitting:
+2. Save the `.p8` to `~/.appstoreconnect/private_keys/AuthKey_XXX.p8`
+3. Set env vars before `eas build`/`eas submit`:
    ```bash
    export EXPO_APPLE_TEAM_ID=XXXXXXXXXX
    export EXPO_APPLE_API_KEY_ID=YYYYYYYYYY
@@ -45,11 +34,19 @@ The first time, EAS asks for your Apple ID, App-Specific Password, and Team ID. 
 
 ## Building
 
-Profiles available:
+```bash
+eas build --platform ios --profile development  # simulator-friendly dev client
+eas build --platform ios --profile preview      # internal TestFlight (Release)
+eas build --platform ios --profile production    # App Store (Release, auto-submit)
+```
 
-- `eas build --profile development`  : internal dev client + simulator (no signing needed)
-- `eas build --profile preview`      : internal TestFlight, Release config
-- `eas build --profile production`    : App Store, Release config with auto-submit
+`--no-wait` returns immediately and prints a URL to monitor.
+
+## Verified build (development profile)
+
+| Build ID | Status | Archive |
+|---|---|---|
+| `6047837b-f7ed-4d99-8cb6-85eb982aad77` | FINISHED | https://expo.dev/artifacts/eas/QmOemcQNlf0n5eFkK1lgU4IeOquhjlneuyd3LOXAZdE.tar.gz |
 
 ## Submitting to TestFlight
 
@@ -57,35 +54,36 @@ Profiles available:
 eas submit --platform ios --latest
 ```
 
-Or with explicit flags:
-
+Or explicit:
 ```bash
 eas submit --platform ios \
-  --id <BUILD_ID_FROM_EAS> \
+  --id <BUILD_ID> \
   --apple-id you@example.com \
   --asc-app-id 1234567890 \
   --apple-team-id XXXXXXXXXX
 ```
 
-## CI
+## CI extension
 
-A GitHub Actions workflow (`.github/workflows/ci.yml`) builds the simulator and runs Maestro. To extend it for EAS:
+The repo has `.github/workflows/ci.yml` that builds and runs Maestro. To add an EAS submit job:
 
-1. Add a `submit` job that runs after a successful `maestro` job:
-   ```yaml
-   submit:
-     needs: maestro
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v4
-       - uses: expo/expo-github-action@v8
-         with:
-           eas-build: true
-           eas-json: eas.json
-       - uses: expo/expo-github-action@v8
-         with:
-           eas-submit: true
-   ```
+```yaml
+submit:
+  needs: maestro
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: expo/expo-github-action@v8
+      with:
+        eas-build: true
+        eas-json: eas.json
+    - uses: expo/expo-github-action@v8
+      with:
+        eas-submit: true
+```
 
-2. Add secrets to the GitHub repo: `EXPO_TOKEN`, `EXPO_APPLE_TEAM_ID`, `EXPO_APPLE_API_KEY_ID`, `EXPO_APPLE_API_ISSUER_ID`.
-3. Upload the `.p8` as a secret file via `EXPO_APPLE_API_KEY_PATH`.
+Required secrets: `EXPO_TOKEN`, `EXPO_APPLE_TEAM_ID`, `EXPO_APPLE_API_KEY_ID`, `EXPO_APPLE_API_ISSUER_ID`. Optional: `EXPO_APPLE_API_KEY_PATH` (path to a `.p8` file uploaded as a secret file).
+
+## Known fix: do NOT add expo-dev-client to this SDK 54 project
+
+Earlier I added `expo-dev-client: ^57.0.18` to enable the `development` EAS profile. That version is for SDK 57 and caused the EAS cloud `pod install` to error out in 1 minute with `Install pods build phase` failure. Reverting that dev dep fixed it. If you need expo-dev-client for local dev, install it only locally with `npx expo install expo-dev-client` and do not commit it.
