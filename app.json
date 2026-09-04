@@ -22,7 +22,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.amirsali.ohdelivery"
+      "bundleIdentifier": "com.amirsali.ohdelivery",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.amirsali.ohdelivery",
