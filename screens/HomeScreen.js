@@ -44,8 +44,10 @@ import mockFeaturedCategories from "../utils/mockData";
 const HomeScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [featuredCategories, setFeaturedCategories] = useState([]);
-  const [useMockData, setUseMockData] = useState(false);
+  // Start with mock data immediately so there's always content
+  const [featuredCategories, setFeaturedCategories] = useState(mockFeaturedCategories);
+  const [useMockData, setUseMockData] = useState(true);
+  const [loading, setLoading] = useState(false);
   const favorites = useSelector(selectFavorites);
   const orders = useSelector(selectOrders);
   const reviews = useSelector(selectReviews);
@@ -89,6 +91,7 @@ const HomeScreen = () => {
   }, [navigation]);
 
   const handleNavigation = async () => {
+    setLoading(true);
     try {
       const { client } = await import("../sanity");
       const data = await client.fetch(
@@ -103,11 +106,17 @@ const HomeScreen = () => {
         }
       }`
       );
-      setFeaturedCategories(data);
+      if (data && data.length > 0) {
+        setFeaturedCategories(data);
+        setUseMockData(false);
+      }
     } catch (error) {
-      console.warn("Sanity fetch failed, using mock data:", error);
+      console.warn("Sanity fetch failed, keeping mock data:", error);
+      // Already showing mock data, just ensure state is correct
       setFeaturedCategories(mockFeaturedCategories);
       setUseMockData(true);
+    } finally {
+      setLoading(false);
     }
   };
 
