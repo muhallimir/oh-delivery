@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import logo from "../assets/images/logo.png";
 import {
@@ -39,11 +39,13 @@ import {
   cuisineMatches,
 } from "../features/filtersSlice";
 import { supportsDiet } from "../utils/dietary";
+import mockFeaturedCategories from "../utils/mockData";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [featuredCategories, setFeaturedCategories] = useState([]);
+  const [useMockData, setUseMockData] = useState(false);
   const favorites = useSelector(selectFavorites);
   const orders = useSelector(selectOrders);
   const reviews = useSelector(selectReviews);
@@ -87,9 +89,9 @@ const HomeScreen = () => {
   }, [navigation]);
 
   const handleNavigation = async () => {
-    const { client } = await import("../sanity");
-    client
-      .fetch(
+    try {
+      const { client } = await import("../sanity");
+      const data = await client.fetch(
         `*[_type == "featured"] {
         ...,
         restaurants[]->{
@@ -100,10 +102,13 @@ const HomeScreen = () => {
           }
         }
       }`
-      )
-      .then((data) => {
-        setFeaturedCategories(data);
-      });
+      );
+      setFeaturedCategories(data);
+    } catch (error) {
+      console.warn("Sanity fetch failed, using mock data:", error);
+      setFeaturedCategories(mockFeaturedCategories);
+      setUseMockData(true);
+    }
   };
 
   useEffect(() => {
@@ -183,6 +188,11 @@ const HomeScreen = () => {
             />
           );
         })}
+        {useMockData && (
+          <View style={styles.mockBanner}>
+            <Text style={styles.mockText}>Demo Mode: Showing sample data</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -256,6 +266,21 @@ const styles = StyleSheet.create({
   },
   body: {
     backgroundColor: "#f3f4f6",
+  },
+  mockBanner: {
+    padding: 16,
+    backgroundColor: "#fffbeb",
+    borderTopWidth: 1,
+    borderTopColor: "#fcd34d",
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  mockText: {
+    color: "#92400e",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
 
