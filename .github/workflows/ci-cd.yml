@@ -82,13 +82,10 @@ jobs:
           path: dist/
 
       - name: Deploy to Vercel Preview
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_OH_DELIVERY }}
-          vercel-args: '--prod=false'
-          working-directory: ./
+        run: |
+          npx vercel@latest deploy --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} dist/
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
   deploy-production:
     name: Deploy Production to Vercel
@@ -106,13 +103,10 @@ jobs:
           path: dist/
 
       - name: Deploy to Vercel Production
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_OH_DELIVERY }}
-          vercel-args: '--prod=true'
-          working-directory: ./
+        run: |
+          npx vercel@latest deploy --prod --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} dist/
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Notify deployment success
         if: success()
