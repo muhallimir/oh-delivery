@@ -83,8 +83,25 @@ jobs:
 
       - name: Deploy to Vercel Preview
         run: |
-          cd dist
-          npx vercel@latest deploy --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --project=prj_qEyPMIThNTC8wE5kUKbmk5BauRYS .
+          mkdir -p .vercel/output/static
+          cp -r dist/* .vercel/output/static/
+          
+          cat > .vercel/output/config.json << 'EOF'
+          {
+            "version": 3,
+            "routes": [
+              {
+                "handle": "filesystem"
+              },
+              {
+                "src": "/(.*)",
+                "dest": "/index.html"
+              }
+            ]
+          }
+          EOF
+          
+          npx vercel@latest deploy --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --prebuilt .
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         working-directory: ./
@@ -106,8 +123,25 @@ jobs:
 
       - name: Deploy to Vercel Production
         run: |
-          cd dist
-          npx vercel@latest deploy --prod --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --project=prj_qEyPMIThNTC8wE5kUKbmk5BauRYS .
+          mkdir -p .vercel/output/static
+          cp -r dist/* .vercel/output/static/
+          
+          cat > .vercel/output/config.json << 'EOF'
+          {
+            "version": 3,
+            "routes": [
+              {
+                "handle": "filesystem"
+              },
+              {
+                "src": "/(.*)",
+                "dest": "/index.html"
+              }
+            ]
+          }
+          EOF
+          
+          npx vercel@latest deploy --prod --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --prebuilt .
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         working-directory: ./
