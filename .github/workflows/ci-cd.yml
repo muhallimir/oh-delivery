@@ -83,14 +83,8 @@ jobs:
 
       - name: Deploy to Vercel Preview
         run: |
-          mkdir -p .vercel
-          cat > .vercel/project.json << 'EOF'
-          {
-            "projectId": "prj_qEyPMIThNTC8wE5kUKbmk5BauRYS",
-            "orgId": "team_amirsalis-projects"
-          }
-          EOF
-          npx vercel@latest deploy --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} dist/
+          cd dist
+          npx vercel@latest deploy --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --project=prj_qEyPMIThNTC8wE5kUKbmk5BauRYS .
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         working-directory: ./
@@ -112,14 +106,8 @@ jobs:
 
       - name: Deploy to Vercel Production
         run: |
-          mkdir -p .vercel
-          cat > .vercel/project.json << 'EOF'
-          {
-            "projectId": "prj_qEyPMIThNTC8wE5kUKbmk5BauRYS",
-            "orgId": "team_amirsalis-projects"
-          }
-          EOF
-          npx vercel@latest deploy --prod --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} dist/
+          cd dist
+          npx vercel@latest deploy --prod --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --project=prj_qEyPMIThNTC8wE5kUKbmk5BauRYS .
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         working-directory: ./
@@ -142,7 +130,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
