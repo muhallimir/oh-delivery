@@ -83,7 +83,13 @@ jobs:
 
       - name: Deploy to Vercel Preview
         run: |
-          npx vercel@latest link --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --project=prj_qEyPMIThNTC8wE5kUKbmk5BauRYS --yes
+          mkdir -p .vercel
+          cat > .vercel/project.json << 'EOF'
+          {
+            "projectId": "prj_qEyPMIThNTC8wE5kUKbmk5BauRYS",
+            "orgId": "team_amirsalis-projects"
+          }
+          EOF
           npx vercel@latest deploy --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} dist/
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -106,7 +112,13 @@ jobs:
 
       - name: Deploy to Vercel Production
         run: |
-          npx vercel@latest link --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} --project=prj_qEyPMIThNTC8wE5kUKbmk5BauRYS --yes
+          mkdir -p .vercel
+          cat > .vercel/project.json << 'EOF'
+          {
+            "projectId": "prj_qEyPMIThNTC8wE5kUKbmk5BauRYS",
+            "orgId": "team_amirsalis-projects"
+          }
+          EOF
           npx vercel@latest deploy --prod --scope=amirsalis-projects --token=${{ secrets.VERCEL_TOKEN }} dist/
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
